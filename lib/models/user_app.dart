@@ -1,12 +1,16 @@
 class UserApp{
-  String id;
+  String uid;
   String nombre;
   String photoURL;
   String profesion;
+  List<String> contactos;
+  List<String> misConversaciones;
   UserApp({
-    this.id,
+    this.uid,
     this.nombre,
     this.photoURL,
-    this.profesion
+    this.profesion,
+    this.contactos,
+    this.misConversaciones
   });
 }

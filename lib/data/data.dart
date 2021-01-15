@@ -1,4 +1,4 @@
-import 'package:chat_real_time/models/user_app.dart';
+
 
 /* List<UserApp> usuariosAmigos = [
   UserApp(

@@ -1,4 +1,5 @@
-import 'package:chat_real_time/pages/lista_contactos.dart';
+import 'package:chat_real_time/pages/login_page.dart';
+import 'package:chat_real_time/services/auth_service.dart';
 import 'package:chat_real_time/services/firestore_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +17,15 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<FirestoreService>(create: (_) => FirestoreService()),
+        Provider<AuthService>(create: (_) => AuthService()),
       ],
       child: MaterialApp(
         title: 'Material App',
         debugShowCheckedModeBanner: false,
-        home: ListaContactos()
+        initialRoute: 'login',
+        routes: {
+          'login': (BuildContext context) => LoginPage(),
+        },
       ),
     );
   }
