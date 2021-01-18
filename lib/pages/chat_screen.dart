@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:chat_real_time/models/message.dart';
 import 'package:chat_real_time/models/user_app.dart';
+import 'package:chat_real_time/services/files_manager.dart';
 import 'package:chat_real_time/services/firestore_service.dart';
+import 'package:chat_real_time/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -18,10 +22,14 @@ class ChatScreen extends StatelessWidget {
   String mensaje = "";
   final TextEditingController _controllerInputText = TextEditingController();
   FirestoreService firestoreService;
+  StorageService storageService;
 
   @override
   Widget build(BuildContext context) {
+    
     firestoreService = Provider.of<FirestoreService>(context);
+    storageService = Provider.of<StorageService>(context);
+
     return Scaffold(
       backgroundColor: Theme.of(context).primaryColor,
       appBar: AppBar(
@@ -84,7 +92,13 @@ class ChatScreen extends StatelessWidget {
       itemBuilder: (BuildContext context, int index) {
         final Message message = messages[index];
         final bool isMe = message.userId == user.uid;
+        if(message.tipo == "texto"){
           return _buildMessageText(context, message, isMe);
+        }else if (message.tipo == "imagen"){
+          return _buildMessageImage(context, message, isMe);
+        }else if (message.tipo == "documento"){
+          //return _buildMessageDocument(context, message, isMe);
+        }
       },
     );
   }
@@ -152,6 +166,89 @@ class ChatScreen extends StatelessWidget {
     }
     return msg;
   }
+  _buildMessageImage(BuildContext context, Message message, bool isMe) {
+    final Container msg = Container(
+      margin: isMe
+        ? EdgeInsets.only(
+            top: 8.0,
+            bottom: 8.0,
+            left: 80.0,
+            right: 8.0
+          )
+        : EdgeInsets.only(
+            top: 8.0,
+            right: 80.0,
+            left: 8.0,
+            bottom: 8.0,
+          ),
+      padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 15.0),
+      decoration: BoxDecoration(
+        color: isMe ? Theme.of(context).accentColor : Color(0xFFFFEFEE),
+        borderRadius: BorderRadius.all(
+          Radius.circular(15.0),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              InkWell(
+                highlightColor: Theme.of(context).primaryColor,
+                child: Text(
+                  message.userName,
+                  style: TextStyle(
+                    color: Colors.blueGrey,
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onTap: (){
+                  /* Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PerfilResumen(userActivo: user, uidUsuarioNuevo: message.userId)),
+                  ); */
+                }
+              ),
+              Expanded(child: Container()),
+              Text(
+                _crearHora(message.instante),
+                style: TextStyle(
+                  color: Colors.blueGrey,
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8.0),
+          GestureDetector(
+            onLongPress: (){
+              //downloadImage(context, message.url);
+            },
+            onTap: (){
+              /* Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => VisualizadorImagen(message.url)),
+              ); */
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: FadeInImage(
+                image: NetworkImage(message.url),
+                placeholder: AssetImage("assets/images/cargarFoto.gif"),
+                fadeInDuration: Duration(milliseconds: 200),
+                fit: BoxFit.contain
+              )
+            ),
+          )
+        ],
+      ),
+    );
+    if (isMe) {
+      return msg;
+    }
+    return msg;
+  }
   String _crearHora(DateTime time){
     String horayMinuto = "";
     bool am = false;
@@ -210,8 +307,15 @@ class ChatScreen extends StatelessWidget {
             icon: Icon(Icons.photo),
             iconSize: 25.0,
             color: Theme.of(context).primaryColor,
-            onPressed: () {
-              
+            onPressed: () async {
+              FilesManager filesManager = new FilesManager();
+              final File pickedFile = await filesManager.getImageFromGallery();
+              if(pickedFile == null) return;
+              final String storagePath =  "archivos_grupos/$conversacionID/${DateTime.now().toString()}.jpg";
+              await storageService.uploadFile(storagePath, pickedFile);
+              final String downloadURL = await storageService.getDownloadURL(storagePath);
+              await firestoreService.agregarImagen(user, conversacionID, downloadURL);
+              print(downloadURL);
             },
           ),
           Expanded(
@@ -239,7 +343,8 @@ class ChatScreen extends StatelessWidget {
                   Message(
                     userId: user.uid,
                     instante: DateTime.now(),
-                    mensaje: mensaje
+                    mensaje: mensaje,
+                    tipo: "texto"
                   )
                 );
                 mensaje = "";

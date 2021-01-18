@@ -1,10 +1,11 @@
-class UserApp{
+class UserApp {
   String uid;
   String nombre;
   String photoURL;
   String profesion;
   List<String> contactos;
   List<String> misConversaciones;
+  
   UserApp({
     this.uid,
     this.nombre,

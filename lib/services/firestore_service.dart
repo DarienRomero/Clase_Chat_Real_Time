@@ -9,7 +9,7 @@ class FirestoreService{
   Stream<QuerySnapshot> getUsers(String uid) => _db.collection("users").where("contactos", arrayContains: uid).snapshots(); 
   
   List<UserApp> cargarUsuarios(List<DocumentSnapshot> snapshots){
-    List<UserApp> listaUsuarios = new List<UserApp>();
+    List<UserApp> listaUsuarios = new List<UserApp>.empty(growable: true);
     if(snapshots.isEmpty) return  listaUsuarios;
     for(DocumentSnapshot snapshot in snapshots){
       listaUsuarios.add(
@@ -49,6 +49,20 @@ class FirestoreService{
       'url': mensaje.url,
       'userName': user.nombre,
     }).catchError((onError) => print(onError));
+  }
+
+  Future<void> agregarImagen(UserApp user, String conversacionID, String urlFirestore) async {
+    CollectionReference ref = _db.collection("conversaciones")
+      .doc(conversacionID)
+        .collection("mensajes");
+    return await ref.add({
+      'userId' : user.uid,
+      'instante' : DateTime.now(),
+      'mensaje': "",
+      'tipo': "imagen",
+      'url': "$urlFirestore",
+      'userName': user.nombre,
+    }).catchError((onError) => print("Error al subir el archivo"));
   }
 
   List<Message> cargarMensajes(List<DocumentSnapshot> mensajesSnapshot){
